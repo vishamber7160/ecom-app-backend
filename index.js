@@ -3,6 +3,9 @@ import dotenv from "dotenv"
 import cors from "cors"
 import helmet from "helmet"
 import morgan from "morgan"
+import rateLimit from "express-rate-limit"
+import dbConnection from "./dbconfig/dbConfig.js"
+import authRoute from "./routes/authRoutes/authRouts.js"
 
 dotenv.config() // configure dotenv file
 
@@ -15,26 +18,47 @@ server.use(morgan("combined"))
 server.use(express.json())
 
 server.use(cors({
-    origin:"*",
-    methods:["GET","POST","PUT","DELETE"],
-    allowedHeaders:["Content-Type", "Authorization"]
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"]
 }))
-server.use(express.urlencoded({extended:true}))
+server.use(express.urlencoded({ extended: true }))
 
-server.use((err,req,res,next)=>{
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100
+})
+
+server.use(limiter)
+
+server.get("/health", (req, res) => {
+    res.status(200).json({
+        health: "ok",
+        message: "I am ok"
+    })
+})
+
+
+server.use((err, req, res, next) => {
     console.log(err)
     res.status(500).send({
-        massage:"Internal server error"
+        message: "Internal server error"
     })
 })
+server.use('/auth',authRoute);
 
-server.get("/health",(req,res)=>{
-    res.status(200).json({
-        health:"ok",
-        message:"I am ok"
-    })
-})
+const startserver = async () => {
+    try {
+        await dbConnection()
+        server.listen(port, () => {
+            console.log(`Server is Running On Port ${port}`)
+        })
 
-server.listen(port,()=>{
-    console.log(`Server is Running On Port ${port}`)
-})
+    } catch (error) {
+      console.log(`Connection Error:${error}`)
+    }
+}
+
+startserver()
+
+
