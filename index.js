@@ -5,7 +5,8 @@ import helmet from "helmet"
 import morgan from "morgan"
 import rateLimit from "express-rate-limit"
 import dbConnection from "./src/dbconfig/dbConfig.js"
-import authRoute from "./src/authRoutes/authRouts.js"
+import authRoute from "./src/auth/authRoutes/authRouts.js"
+import productRoute from "./src/product/routes/productRoutes.js"
 
 dotenv.config() // configure dotenv file
 
@@ -46,6 +47,7 @@ server.use((err, req, res, next) => {
     })
 })
 server.use('/auth',authRoute);
+server.use('/products', productRoute);
 
 const startserver = async () => {
     try {
@@ -59,6 +61,6 @@ const startserver = async () => {
     }
 }
 
-startserver()
+startserver();
 
 

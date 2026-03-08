@@ -1,6 +1,6 @@
 import User from "../models/userModel.js"
 import { signupSchema, loginSchema, updateUserSchema } from "../schemaValidator/authValidater.js"
-import { otpGenerator } from "../utils/otpGenrator.js"
+import { otpGenerator } from "../../utils/otpGenrator.js"
 import mongoose from "mongoose"
 
 const loginController = async (req, res, next) => {
