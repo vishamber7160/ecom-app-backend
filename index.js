@@ -4,8 +4,8 @@ import cors from "cors"
 import helmet from "helmet"
 import morgan from "morgan"
 import rateLimit from "express-rate-limit"
-import dbConnection from "./dbconfig/dbConfig.js"
-import authRoute from "./routes/authRoutes/authRouts.js"
+import dbConnection from "./src/dbconfig/dbConfig.js"
+import authRoute from "./src/authRoutes/authRouts.js"
 
 dotenv.config() // configure dotenv file
 

@@ -1,5 +1,5 @@
-import User from "../../models/userModel.js"
-import { signupSchema,loginSchema } from "../../schemaValidator/authValidater.js"
+import User from "../models/userModel.js"
+import { signupSchema,loginSchema } from "../schemaValidator/authValidater.js"
 
 const loginController = async (req, res, next) => {
   try {
@@ -74,7 +74,6 @@ const signupController = async (req, res, next) => {
         }
 
         const { username, email, password, mobile, role } = validatedData.data
-        console.log({ username, email, password, mobile, role })
 
         const existingUser = await User.findOne({
             $or: [{ email }, { mobile }]
