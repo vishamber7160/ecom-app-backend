@@ -7,6 +7,7 @@ import rateLimit from "express-rate-limit"
 import dbConnection from "./src/dbconfig/dbConfig.js"
 import authRoute from "./src/auth/authRoutes/authRouts.js"
 import productRoute from "./src/product/routes/productRoutes.js"
+import sallerAdminRouter from "./src/saller_admin/routes/routes.js"
 
 dotenv.config() // configure dotenv file
 
@@ -48,6 +49,7 @@ server.use((err, req, res, next) => {
 })
 server.use('/auth',authRoute);
 server.use('/products', productRoute);
+server.use('/saller-admin', sallerAdminRouter);
 
 const startserver = async () => {
     try {
