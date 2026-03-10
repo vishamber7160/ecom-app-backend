@@ -86,16 +86,17 @@ const sellerSchema = new mongoose.Schema(
 
 
 // Password Hash
-sellerSchema.pre("save", async function (next) {
+sellerSchema.pre("save", async function () {
 
     if (!this.isModified("password")) return next();
 
     const salt = await bcrypt.genSalt(10);
     this.password = await bcrypt.hash(this.password, salt);
-
-    next();
 });
 
+sellerSchema.methods.comparePassword = async function (candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+};
 
 const Seller = mongoose.model("Seller", sellerSchema);
 

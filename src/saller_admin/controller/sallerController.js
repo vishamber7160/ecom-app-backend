@@ -1,5 +1,6 @@
-import Seller from "../model/saller_model";
-import {createSellerSchema} from "../schemaValidation/validator";
+import Seller from "../model/saller_model.js";
+import {createSellerSchema,loginValidationSchema} from "../schemaValidation/validator.js";
+import jwt from "jsonwebtoken";
 
 // Get All Sellers
 const getAllSellers = async (req, res) => {
@@ -53,7 +54,7 @@ const addSeller = async (req, res) => {
         if (!validation.success) {
             return res.status(400).json({
                 success: false,
-                errors: validation.error.errors
+                errors: validation.error.issues[0].message
             });
         }
 
@@ -77,18 +78,32 @@ const addSeller = async (req, res) => {
             .replace(/ /g, "-")
             .replace(/[^\w-]+/g, "");
 
+        // check sulg exist
+        const existingSlug = await Seller.findOne({ storeSlug });
+
+        if (existingSlug) {
+            return res.status(400).json({
+                success: false,
+                message: "Store name already exists, please choose a different name"
+            }); 
+            
+        }
+
         // create seller
         const seller = new Seller({
             ...data,
             storeSlug
         });
 
-        await seller.save();
+        let savedSeller = await seller.save();
+        savedSeller = savedSeller.toObject();
+        delete savedSeller.password;
+        delete savedSeller.bankDetails?.accountNumber;
 
         res.status(201).json({
             success: true,
             message: "Seller registered successfully",
-            seller
+            seller: savedSeller
         });
 
     } catch (error) {
@@ -204,4 +219,65 @@ async function deleteSellerByID(req,res) {
     }
 }
 
-export { getAllSellers, addSeller, getSellerById, updateSellerById, deleteSellerByID };
+// Seller login controller
+async function sellerLogin(req, res) {
+    try {
+        const validation = loginValidationSchema.safeParse(req.body);
+        if (!validation.success) {
+            return res.status(400).json({
+                success: false,
+                errors: validation.error.issues[0].message
+            });
+        }
+        // Validate input
+        const { email, password } = validation.data;
+        const seller = await Seller
+            .findOne({ email, isDeleted: false })
+            .select("+password");
+        if (!seller) {  
+            return res.status(404).json({
+                success: false,
+                message: "Seller not found"
+            });
+        }
+        const isMatch = await seller.comparePassword(password);
+        if (!isMatch) {
+            return res.status(401).json({
+                success: false,
+                message: "Invalid credentials"
+            });
+        }
+        const token = jwt.sign({ id: seller._id }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRE });
+        res.status(200).json({
+            success: true,
+            message: "Login successful",
+            token,
+            seller: {
+                id: seller._id,
+                name: seller.name,
+                email: seller.email,
+                storeName: seller.storeName,
+                storeSlug: seller.storeSlug,
+                phone: seller.phone,
+                imageProfile: seller.imageProfile,
+                address: seller.address,
+                gstNumber: seller.gstNumber,
+                panNumber: seller.panNumber,
+                bankDetails: {
+                    accountHolderName: seller.bankDetails.accountHolderName,
+                    ifscCode: seller.bankDetails.ifscCode,
+                    bankName: seller.bankDetails.bankName
+                }
+            }
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: "Server error"
+        });
+    }   
+}
+
+
+export { getAllSellers, addSeller, getSellerById, updateSellerById, deleteSellerByID, sellerLogin };
