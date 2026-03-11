@@ -95,7 +95,7 @@ const productSchema = new mongoose.Schema(
 
 
 // Auto calculate final price
-productSchema.pre("save", function (next) {
+productSchema.pre("save", function () {
   this.finalPrice = this.price - (this.price * this.discount) / 100;
 });
 
