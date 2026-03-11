@@ -4,9 +4,9 @@ import { getAllSellers,addSeller,getSellerById,updateSellerById, deleteSellerByI
 const sallerAdminRouter = express.Router();
 
 sallerAdminRouter.get("/all-sellers", getAllSellers);
-sallerAdminRouter.post("/add-seller", addSeller);
+sallerAdminRouter.post("/seller-register", addSeller);
 sallerAdminRouter.get("/seller/:id", getSellerById);
-sallerAdminRouter.put("/update-seller/:id", updateSellerById );
+sallerAdminRouter.patch("/update-seller/:id", updateSellerById );
 sallerAdminRouter.delete("/delete-seller/:id", deleteSellerByID );
 sallerAdminRouter.post("/login", sellerLogin);
 

@@ -1,5 +1,5 @@
 import Seller from "../model/saller_model.js";
-import {createSellerSchema,loginValidationSchema} from "../schemaValidation/validator.js";
+import {createSellerSchema,loginValidationSchema,updateStatusValidationSchema} from "../schemaValidation/validator.js";
 import jwt from "jsonwebtoken";
 
 // Get All Sellers
@@ -19,7 +19,7 @@ const getAllSellers = async (req, res) => {
 
         const total = await Seller.countDocuments({ isDeleted: false });
 
-        res.status(200).json({
+        res.set("Cache-Control", "no-store").status(200).json({
             success: true,
             total,
             page,
@@ -149,18 +149,20 @@ async function updateSellerById(req, res) {
     try {
         const sellerId = req.params.id;
         const updateData = req.body;
+        console.log(sellerId, updateData)
 
         // Zod validation
-        const validation = createSellerSchema.partial().safeParse(updateData);
+        const validation = updateStatusValidationSchema.safeParse(updateData);
+        console.log(validation)
         if (!validation.success) {
             return res.status(400).json({
                 success: false,
-                errors: validation.error.errors
+                errors: validation.error.issues[0].message
             });
         }
 
-        const updatedSeller = await Seller.findByIdAndUpdate(
-            sellerId,
+        const updatedSeller = await Seller.findOneAndUpdate(
+            { _id: sellerId, isDeleted: false },
             { ...validation.data, updatedAt: Date.now() },
             { new: true, runValidators: true }
         ).select("-password -bankDetails.accountNumber");

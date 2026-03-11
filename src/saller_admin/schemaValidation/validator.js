@@ -76,7 +76,7 @@ export const createSellerSchema = z.object({
             .max(100)
             .optional()
 
-    }).optional()
+    }).optional(),
 
 });
 
@@ -88,4 +88,13 @@ export const loginValidationSchema = z.object({
     password: z
         .string()
         .min(6, "Password must be at least 6 characters")
+});
+
+
+
+export const updateStatusValidationSchema = z.object({
+    status: z.enum(["pending", "approved", "rejected", "blocked"], "Status must be either 'approved' or 'rejected'")
+});
+export const updateSellerStatusValidationSchema = z.object({
+    status: z.enum(["pending", "approved", "rejected", "blocked"], "Invalid status value")
 });

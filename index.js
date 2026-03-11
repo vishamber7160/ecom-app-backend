@@ -21,7 +21,7 @@ server.use(express.json())
 
 server.use(cors({
     origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE","PATCH"],
     allowedHeaders: ["Content-Type", "Authorization"]
 }))
 server.use(express.urlencoded({ extended: true }))
