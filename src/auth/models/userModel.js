@@ -32,17 +32,6 @@ const userSchema = new mongoose.Schema({
         match: /^[0-9]{10}$/
     },
 
-    role: {
-        type: String,
-        enum: ["customer", "seller", "admin"],
-        default: "customer"
-    },
-
-    profileImage: {
-        type: String,
-        default: null
-    },
-
     status: {
         type: String,
         enum: ["active", "blocked"],
@@ -62,22 +51,39 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    cart: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Cart"
+    },
 
     address: {
-            fullName: String,
-            phone: String,
-            city: String,
-            state: String,
-            pincode: String,
-            country: String,
-            addressLine: String,
-            isDefault: {
-                type: Boolean,
-                default: false
-            }
-        },
+        landmark: String,
+        localAddress: String,
+        city: String,
+        state: String,
+        pincode: String,
+        country: String,
+        addressLine: String,
+        isDefault: {
+            type: Boolean,
+            default: true
+        }
+    },
+    secondryAddress: {
+        landmark: String,
+        localAddress: String,
+        city: String,
+        state: String,
+        pincode: String,
+        country: String,
+        addressLine: String,
+        isDefault: {
+            type: Boolean,
+            default: false
+        }
+    },
     otp: {
-        code: String,
+        codeHash: String,
         expiresAt: Date
     },
     isMobileVerified: {
@@ -87,6 +93,7 @@ const userSchema = new mongoose.Schema({
 
 }, {
     timestamps: true
+    
 })
 
 userSchema.pre("save", async function () {

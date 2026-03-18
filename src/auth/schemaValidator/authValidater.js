@@ -1,4 +1,4 @@
-import { email, z } from "zod"
+import { z } from "zod"
 
 export const signupSchema = z.object({
 
@@ -66,54 +66,22 @@ export const updateUserSchema = z.object({
     .url("Profile image must be a valid URL")
     .optional(),
 
-  address: z.object({
-
-    fullName: z
-      .string()
-      .trim()
-      .min(3, "Full name must be at least 3 characters")
-      .optional(),
-
-    phone: z
-      .string()
-      .trim()
-      .regex(/^[0-9]{10}$/, "Phone number must be 10 digits")
-      .optional(),
-
-    city: z
-      .string()
-      .trim()
-      .min(2, "City must be at least 2 characters")
-      .optional(),
-
-    state: z
-      .string()
-      .trim()
-      .min(2, "State must be at least 2 characters")
-      .optional(),
-
-    pincode: z
-      .string()
-      .trim()
-      .regex(/^[0-9]{6}$/, "Pincode must be 6 digits")
-      .optional(),
-
-    country: z
-      .string()
-      .trim()
-      .min(2, "Country must be at least 2 characters")
-      .optional(),
-
-    addressLine: z
-      .string()
-      .trim()
-      .min(5, "Address line must be at least 5 characters")
-      .optional(),
-
-    isDefault: z
-      .boolean()
-      .optional()
-
-  }).optional()
+  addresses: z.array(
+  z.object({
+     fullName:z.string().min(3),
+     phone:z.string().regex(/^[0-9]{10}$/),
+     city:z.string().min(2),
+     state:z.string().min(2),
+     pincode:z.string().regex(/^[0-9]{6}$/),
+     country:z.string().min(2),
+     addressLine:z.string().min(5),
+     isDefault:z.boolean().optional()
+  })
+).optional()
 
 })
+
+
+// const forgotValidation = z.object({
+
+// })

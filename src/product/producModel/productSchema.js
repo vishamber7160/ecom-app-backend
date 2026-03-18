@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import slugify from "slugify";
 
 const productSchema = new mongoose.Schema(
   {
@@ -9,13 +10,22 @@ const productSchema = new mongoose.Schema(
       maxlength: 200
     },
 
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      index: true
+    },
+
     description: {
       type: String,
       required: [true, "Description is required"]
     },
 
     category: {
-      type: String,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
       required: true,
       index: true
     },
@@ -43,10 +53,28 @@ const productSchema = new mongoose.Schema(
       min: 0
     },
 
+    lowStockThreshold: {
+      type: Number,
+      default: 5
+    },
+
+    // Variants (size, color, etc.)
+    variants: [
+      {
+        sku: {
+          type: String
+        },
+        size: String,
+        color: String,
+        price: Number,
+        stock: Number
+      }
+    ],
+
     sellerId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: false
+      ref: "Seller",
+      required: true
     },
 
     rating: {
@@ -61,6 +89,7 @@ const productSchema = new mongoose.Schema(
       default: 0
     },
 
+    // Images
     images: [
       {
         url: {
@@ -71,10 +100,10 @@ const productSchema = new mongoose.Schema(
       }
     ],
 
-    status: {
-      type: String,
-      enum: ["active", "inactive", "out_of_stock"],
-      default: "active"
+    // Video Support
+    video: {
+      url: String,
+      thumbnail: String
     },
 
     tags: [
@@ -82,6 +111,19 @@ const productSchema = new mongoose.Schema(
         type: String
       }
     ],
+
+    // SEO Fields
+    seo: {
+      metaTitle: String,
+      metaDescription: String,
+      keywords: [String]
+    },
+
+    status: {
+      type: String,
+      enum: ["active", "inactive", "out_of_stock"],
+      default: "active"
+    },
 
     isDeleted: {
       type: Boolean,
@@ -93,11 +135,39 @@ const productSchema = new mongoose.Schema(
   }
 );
 
+// 🔥 Auto sulg update calculate final price (for save & update)
+productSchema.pre(["save", "findOneAndUpdate"], function (next) {
 
-// Auto calculate final price
-productSchema.pre("save", function () {
-  this.finalPrice = this.price - (this.price * this.discount) / 100;
+  if (this.isModified("title")) {
+    this.slug = slugify(this.title, {
+      lower: true,
+      strict: true
+    });
+  }
+
+  const update = this._update;
+
+  if (update.title) {
+    update.slug = slugify(update.title, {
+      lower: true,
+      strict: true
+    });
+  }
+
+  const doc = this._update || this;
+
+  if (doc.price !== undefined && doc.discount !== undefined) {
+    doc.finalPrice =
+      doc.price - (doc.price * doc.discount) / 100;
+  }
+
+  next();
 });
+
+// 🔥 Indexing for performance & search
+productSchema.index({ title: "text", description: "text" });
+productSchema.index({ price: 1 });
+productSchema.index({ rating: -1 });
 
 const Product = mongoose.model("Product", productSchema);
 

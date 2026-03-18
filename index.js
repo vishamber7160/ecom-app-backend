@@ -28,28 +28,32 @@ server.use(express.urlencoded({ extended: true }))
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 100
+  max: 200,
+  message: {
+    status: 429,
+    message: "Too many requests, please try again later."
+  }
 })
 
 server.use(limiter)
 
 server.get("/health", (req, res) => {
     res.status(200).json({
-        health: "ok",
-        message: "I am ok"
+        status: "ok",
+        uptime: process.uptime(),
+        timestamp: Date.now()
     })
 })
 
 
+server.use('/auth',authRoute);
+server.use('/products', productRoute);
 server.use((err, req, res, next) => {
     console.log(err)
     res.status(500).send({
         message: "Internal server error"
     })
 })
-server.use('/auth',authRoute);
-server.use('/products', productRoute);
-server.use('/saller-admin', sallerAdminRouter);
 
 const startserver = async () => {
     try {

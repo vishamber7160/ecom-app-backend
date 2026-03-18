@@ -11,3 +11,6 @@ sallerAdminRouter.delete("/delete-seller/:id", deleteSellerByID );
 sallerAdminRouter.post("/login", sellerLogin);
 
 export default sallerAdminRouter;
+
+
+// /saller-admin/login
