@@ -26,11 +26,6 @@ export const signupSchema = z.object({
     .string()
     .trim()
     .regex(/^[0-9]{10}$/, "Mobile number must be 10 digits"),
-
-  role: z
-    .enum(["customer", "seller"])
-    .optional()
-
 })
 
 export const loginSchema = z.object({

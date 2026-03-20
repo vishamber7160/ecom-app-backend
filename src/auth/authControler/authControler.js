@@ -5,85 +5,66 @@ import mongoose from "mongoose"
 import { emailSender } from "../../utils/emailSender.js"
 
 const loginController = async (req, res) => {
-  try {
-    const validatedData = loginSchema.safeParse(req.body);
+    try {
+        const validatedData = loginSchema.safeParse(req.body);
 
-    if (!validatedData.success) {
-      return res.status(400).json({
-        status: "error",
-        message: validatedData.error.errors[0].message,
-      });
+        if (!validatedData.success) {
+            return res.status(400).json({
+                status: "error",
+                message: validatedData.error.errors[0].message,
+            });
+        }
+
+        const { email, password } = validatedData.data;
+        console.log({email,password})
+
+        const user = await User.findOne({ email }).select("+password");
+
+        if (!user) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid email or password",
+            });
+        }
+
+        const isMatch = await user.comparePassword(password);
+
+        if (!isMatch) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid email or password",
+            });
+        }
+
+
+        const token = user.generateJWT()
+        const data = {
+            username: user.username,
+            email: user.email,
+            isEmailVerified: user.isEmailVerified,
+            token:token
+        }
+        return res.status(200).json({
+            status: "success",
+            message: "Login Successfully",
+            data,
+            token
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            status: "error",
+            message: "Internal Server Error",
+        });
     }
-
-    const { email, password } = validatedData.data;
-
-    const user = await User.findOne({ email }).select("+password");
-
-    if (!user) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid email or password",
-      });
-    }
-
-    const isMatch = await user.comparePassword(password);
-
-    if (!isMatch) {
-      return res.status(400).json({
-        status: "error",
-        message: "Invalid email or password",
-      });
-    }
-
-    // 🚫 Prevent OTP spam
-    if (user.otpExpire && user.otpExpire > Date.now()) {
-      return res.status(429).json({
-        status: "fail",
-        message: "OTP already sent. Try again after 5 minutes",
-      });
-    }
-
-    // ✅ Generate OTP
-    const otp = otpGenerator();
-
-
-    user.otp = otp;
-    user.otpExpire = Date.now() + 5 * 60 * 1000;
-
-    await user.save();
-
-    // ✅ Send Email
-    const response = await emailSender(
-      user.email,
-      "Your OTP Code",
-      `Your OTP is ${otp}. It will expire in 5 minutes.`
-    );
-
-    if (!response?.accepted?.length) {
-      return res.status(500).json({
-        status: "fail",
-        message: "Failed to send OTP",
-      });
-    }
-
-    return res.status(200).json({
-      status: "success",
-      message: "OTP sent successfully",
-    });
-
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({
-      status: "error",
-      message: "Internal Server Error",
-    });
-  }
 };
 
 
 const otpVerify = async (req, res) => {
     try {
         const { otp, email } = req.body;
+        console.log({otp,email})
 
         const user = await User.findOne({ email });
 
@@ -96,7 +77,7 @@ const otpVerify = async (req, res) => {
 
         // ✅ Validate OTP + Expiry
         if (
-            user.otp !== otp ||
+            user.otp.code !== otp ||
             user.otpExpire < Date.now()
         ) {
             return res.status(400).json({
@@ -106,8 +87,9 @@ const otpVerify = async (req, res) => {
         }
 
         // ✅ Clear OTP after use
-        user.otp = undefined;
-        user.otpExpire = undefined;
+        user.isEmailVerified=true
+        // user.otp = undefined;
+        // user.otpExpire = undefined;
 
         await user.save();
 
@@ -117,14 +99,6 @@ const otpVerify = async (req, res) => {
         return res.status(200).json({
             status: "success",
             message: "Login successful",
-            token,
-            user: {
-                id: user._id,
-                username: user.username,
-                email: user.email,
-                mobile: user.mobile,
-                role: user.role,
-            },
         });
 
     } catch (error) {
@@ -174,19 +148,30 @@ const signupController = async (req, res, next) => {
             }
         })
 
-        const userResponse = {
-            id: user._id,
-            username: user.username,
-            email: user.email,
-            mobile: user.mobile,
-            role: user.role
+        if (!user) {
+            res.status(400).json({
+                status: "Faild",
+                message: "User not created successfully",
+            })
         }
 
-        res.status(201).json({
-            status: "success",
-            message: "User created successfully",
-            data: userResponse
-        })
+        const response = await emailSender(
+            email,
+            "Your OTP Code",
+            `Your OTP is ${otp}`,
+            `
+    <h2>OTP Verification</h2>
+    <p>Your OTP is:</p>
+    <h1 style="color:blue;">${otp}</h1>
+    <p>This OTP expires in 10 minutes.</p>
+  `
+        );
+        if(response.accepted[0].length){
+            res.status(200).json({
+                status:"success",
+                message:"otp send Success"
+            })
+        }
 
     } catch (error) {
 

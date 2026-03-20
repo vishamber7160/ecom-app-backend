@@ -83,7 +83,7 @@ const userSchema = new mongoose.Schema({
         }
     },
     otp: {
-        codeHash: String,
+        code: String,
         expiresAt: Date
     },
     isMobileVerified: {
