@@ -64,13 +64,12 @@ const loginController = async (req, res) => {
 const otpVerify = async (req, res) => {
     try {
         const { otp, email } = req.body;
-        console.log({otp,email})
 
         const user = await User.findOne({ email });
 
         if (!user) {
             return res.status(400).json({
-                status: "fail",
+                status: "error",
                 message: "User not found",
             });
         }
@@ -78,10 +77,10 @@ const otpVerify = async (req, res) => {
         // ✅ Validate OTP + Expiry
         if (
             user.otp.code !== otp ||
-            user.otpExpire < Date.now()
+            user.otp.otpExpire < Date.now()
         ) {
             return res.status(400).json({
-                status: "fail",
+                status: "error",
                 message: "Invalid or expired OTP",
             });
         }
@@ -94,11 +93,10 @@ const otpVerify = async (req, res) => {
         await user.save();
 
         // ✅ Generate token AFTER verification
-        const token = user.generateJWT();
 
         return res.status(200).json({
             status: "success",
-            message: "Login successful",
+            message: "otp verify successfully",
         });
 
     } catch (error) {
@@ -150,7 +148,7 @@ const signupController = async (req, res, next) => {
 
         if (!user) {
             res.status(400).json({
-                status: "Faild",
+                status: "error",
                 message: "User not created successfully",
             })
         }
@@ -193,8 +191,6 @@ const signupController = async (req, res, next) => {
 async function userUpdateController(req, res, next) {
     try {
         const { id } = req.params
-        console.log(id)
-        console.log(req.body)
         const validatedData = updateUserSchema.safeParse(req.body)
         console.log(validatedData)
         if (!validatedData.success) {
@@ -301,7 +297,7 @@ async function getAllusers(req, res) {
 
 async function forgotPassword(req, res) {
     try {
-        const email = req.body.email
+        const {email} = req.body
         const user = await User.findOne({ email })
         if (!user) {
             return res.status(400).json({
@@ -311,15 +307,48 @@ async function forgotPassword(req, res) {
         }
 
         const otp = otpGenerator()
-        await User.findOneAndUpdate({
-            email,
-            $or: { otp }
+        user.otp={
+            code:otp,
+            expiresAt: new Date(Date.now() + 10 * 60 * 1000)
+        }
+        await user.save()
+        await emailSender(email,"otp vaification",`Your otp${otp}`)
+        res.status(200).json({
+            status:"seccuss",
+            message:"otp send Successfully"
         })
+
 
     } catch (error) {
 
+        res.status(500).json({
+            status:"error",
+            message: new Error("internal server error")
+        })
     }
 }
 
+async function resetPassword(req,res){
+    try {
+        const {email,password} = req.body
+        const user = await User.findOne({email})
+        if(!user){
+            res.status(400).json({
+                status:"error",
+                message:"user not exist"
+            })
+        }
 
-export { loginController, signupController, userUpdateController, userDeleteController, getAllusers, otpVerify, forgotPassword }
+        user.password = password
+        await user.save()
+        res.status(200).json({
+            status:"success",
+            message:"password reset successfully"
+        })
+    } catch (error) {
+        
+    }
+
+}
+
+export { loginController, signupController, userUpdateController, userDeleteController, getAllusers, otpVerify, forgotPassword, resetPassword }

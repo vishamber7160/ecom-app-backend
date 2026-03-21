@@ -5,7 +5,9 @@ import {
     userUpdateController,
     userDeleteController,
     getAllusers,
-    forgotPassword,otpVerify
+    forgotPassword,
+    otpVerify,
+    resetPassword
 } from "../authControler/authControler.js"
 
 const authRoute = express.Router()
@@ -17,7 +19,7 @@ authRoute.delete('/User-delete/:id',userDeleteController);
 authRoute.get('/users',getAllusers)
 authRoute.post("/forgot-password", forgotPassword);
 authRoute.post("/otp-verification", otpVerify)
-// authRoute.post("/reset-password/:token", resetPassword);
+authRoute.post("/reset-password", resetPassword);
 
 
 export default authRoute;
